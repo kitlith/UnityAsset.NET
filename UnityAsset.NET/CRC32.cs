@@ -551,7 +551,11 @@ public static class CRC32
 
         return new byte[] { d, c, b, a };
     }
-    
+
+    public static FileStream log_bin;
+    public static StreamWriter log_txt = new StreamWriter("crc.txt");
+
+    public static int log_count = 0;
     public static uint CalculateCRC32(byte[] data, uint initialCrc = 0)
     {
         uint crc = ~initialCrc;
@@ -574,6 +578,20 @@ public static class CRC32
         {
             crc = FastTable[(crc ^ data[p++]) & 0xFF] ^ crc >> 8;
         }
+
+        if (initialCrc == 0) {
+            if (log_bin is not null) {
+                log_bin.Close();
+            }
+            log_bin = File.Create("crc." + log_count + ".bin");
+            log_count += 1;
+        }
+
+        log_bin.Write(data);
+        log_bin.Flush();
+        log_txt.WriteLine("{0,08:x} -> {1,08:x}: {2} bytes", initialCrc, ~crc, data.Length);
+        log_txt.Flush();
+
         return ~crc;
     }
     
